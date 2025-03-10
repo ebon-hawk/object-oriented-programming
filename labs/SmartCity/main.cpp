@@ -1,5 +1,6 @@
-#include "smart_city.hpp"
 #include <iostream>
+
+#include "smart_city.hpp"
 
 const unsigned int MIN_BUILDING_COUNT = 1;
 const unsigned int MIN_EVENT_COUNT = 1;

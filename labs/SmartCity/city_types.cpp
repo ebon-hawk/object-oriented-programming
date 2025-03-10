@@ -1,6 +1,7 @@
-#include "city_types.hpp"
 #include <iostream>
 #include <limits>
+
+#include "city_types.hpp"
 
 BuildingType getBuildingTypeFromUser() {
     int choice;

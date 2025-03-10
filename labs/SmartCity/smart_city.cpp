@@ -1,6 +1,7 @@
-#include "smart_city.hpp"
 #include <iostream>
 #include <limits>
+
+#include "smart_city.hpp"
 
 Building readBuilding() {
     Building building;
