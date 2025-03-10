@@ -1,4 +1,5 @@
 #pragma once
+
 #include "city_types.hpp"
 
 const unsigned int MAX_CONDITION = 1;
