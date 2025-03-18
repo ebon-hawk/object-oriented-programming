@@ -1,120 +1,17 @@
 #define _CRT_SECURE_NO_WARNINGS
 
+#include <cmath>
 #include <cstring>
 #include <fstream>
 #include <iostream>
 #include <limits>
 
-#include "smart_city.hpp"
-#include "utils.hpp"
-
-Building readBuilding() {
-    Building building;
-    std::cin.clear();
-    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-
-    while (true) {
-        std::cout << "Enter building name: ";
-
-        std::cin.getline(building.name, MAX_BUILDING_NAME);
-
-        if (std::cin.good() && building.name[0] != '\0') break;
-
-        std::cin.clear();
-        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-        std::cout << "Error. Please try again." << std::endl;
-    }
-
-    building.type = getBuildingTypeFromUser();
-
-    if (std::cin.fail()) {
-        std::cin.clear();
-        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-    }
-
-    while (true) {
-        std::cout << "Enter building location (x, y): ";
-
-        std::cin >> building.location.x >> building.location.y;
-
-        if (std::cin.good()) break;
-
-        std::cin.clear();
-        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-        std::cout << "Error. Please try again." << std::endl;
-    }
-
-    unsigned int choice;
-
-    while (true) {
-        std::cout << "Enter building condition (" << MIN_CONDITION << "-" << MAX_CONDITION << "): ";
-
-        std::cin >> choice;
-
-        if (std::cin.good() && choice >= MIN_CONDITION && choice <= MAX_CONDITION) {
-            building.status.condition = choice;
-
-            break;
-        }
-
-        std::cin.clear();
-        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-        std::cout << "Error. Please try again." << std::endl;
-    }
-
-    while (true) {
-        std::cout << "Enter building occupancy (" << MIN_OCCUPANCY << "-" << MAX_OCCUPANCY << "): ";
-
-        std::cin >> choice;
-
-        if (std::cin.good() && choice >= MIN_OCCUPANCY && choice <= MAX_OCCUPANCY) {
-            building.status.occupancy = choice;
-
-            break;
-        }
-
-        std::cin.clear();
-        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-        std::cout << "Error. Please try again." << std::endl;
-    }
-
-    while (true) {
-        std::cout << "Enter building power (" << MIN_POWER << "-" << MAX_POWER << "): ";
-
-        std::cin >> choice;
-
-        if (std::cin.good() && choice >= MIN_POWER && choice <= MAX_POWER) {
-            building.status.power = choice;
-
-            break;
-        }
-
-        std::cin.clear();
-        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-        std::cout << "Error. Please try again." << std::endl;
-    }
-
-    return building;
-}
-
-void printBuilding(const Building& building) {
-    std::cout << "--- Buildings Information ---" << std::endl;
-    std::cout << "Building name: " << building.name << std::endl;
-    std::cout << "Building type: " << BUILDING_TYPES[building.type] << std::endl;
-    std::cout << "Location: (" << building.location.x << ", " << building.location.y << ")" << std::endl;
-    std::cout << "Occupancy: " << building.status.occupancy << std::endl;
-    std::cout << "Power level: " << building.status.power << std::endl;
-    std::cout << "Working condition: " << building.status.condition << std::endl;
-}
+#include "event.hpp"
+#include "search_option.hpp"
 
 Event readEvent() {
     Event event;
-    event.emergency = getEmergencyLevelFromUser();
-
-    if (std::cin.fail()) {
-        std::cin.clear();
-        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-    }
+    event.level = readEmergencyLevel();
 
     while (true) {
         std::cout << "Enter event location (x, y): ";
@@ -144,6 +41,11 @@ Event readEvent() {
     }
 
     return event;
+}
+
+bool isEventInRange(const Event& event, int cx, int cy, int radius) {
+    const Location l1 = event.location, l2 = { cx, cy };
+    return std::sqrt(std::pow(l2.x - l1.x, 2) + std::pow(l2.y - l1.y, 2)) <= radius;
 }
 
 bool loadEventFromFile(Event& event, std::ifstream& file) {
@@ -177,7 +79,7 @@ bool loadEventFromFile(Event& event, std::ifstream& file) {
             std::strcpy(event.description, value);
         }
         else if (std::strcmp(key, "LEVEL") == 0) {
-            event.emergency = (EmergencyLevel)(std::atoi(value));
+            event.level = (EmergencyLevel)(std::atoi(value));
         }
         else if (std::strcmp(key, "LOCATION_X") == 0) {
             event.location.x = std::atoi(value);
@@ -190,7 +92,7 @@ bool loadEventFromFile(Event& event, std::ifstream& file) {
     return true;
 }
 
-bool loadEventsFromFile(Event*& events, const char* fileName, unsigned int* count) {
+bool loadEventsFromFile(Event*& events, const char* fileName, unsigned int& count) {
     if (!fileName) {
         std::cout << "Invalid or missing file name." << std::endl;
 
@@ -205,7 +107,7 @@ bool loadEventsFromFile(Event*& events, const char* fileName, unsigned int* coun
         return false;
     }
 
-    *count = 0;
+    count = 0;
 
     bool isValue = false;
     char key[50] = { '\0' }, line[256] = { '\0' }, value[100] = { '\0' };
@@ -233,8 +135,8 @@ bool loadEventsFromFile(Event*& events, const char* fileName, unsigned int* coun
         return false;
     }
 
-    *count = std::atoi(value);
-    events = new (std::nothrow) Event[*count];
+    count = std::atoi(value);
+    events = new (std::nothrow) Event[count];
 
     if (!events) {
         inFile.close();
@@ -243,7 +145,7 @@ bool loadEventsFromFile(Event*& events, const char* fileName, unsigned int* coun
 
     unsigned int current = 0;
 
-    while (inFile.getline(line, sizeof(line)) && current < *count) {
+    while (inFile.getline(line, sizeof(line)) && current < count) {
         if (line[0] == '[') continue; // Skip section headers (e.g., [EVENT_X])
 
         if (!loadEventFromFile(events[current], inFile)) {
@@ -253,8 +155,8 @@ bool loadEventsFromFile(Event*& events, const char* fileName, unsigned int* coun
 
         // Currently at '['
 
-        if (events[current].emergency == UNKNOWN_EMERGENCY_LEVEL ||
-            isValidEmergencyLevel(events[current].emergency)) {
+        if (events[current].level == UNKNOWN_EMERGENCY_LEVEL ||
+            isValidEmergencyLevel(events[current].level)) {
             current++;
         }
     }
@@ -267,7 +169,7 @@ bool saveEventToFile(const Event& event, std::ofstream& file) {
     if (!file.is_open()) return false;
 
     file << "DESCRIPTION=" << event.description << std::endl;
-    file << "LEVEL=" << event.emergency << std::endl;
+    file << "LEVEL=" << event.level << std::endl;
     file << "LOCATION_X=" << event.location.x << std::endl;
     file << "LOCATION_Y=" << event.location.y << std::endl;
     return true;
@@ -296,7 +198,7 @@ bool saveEventsToFile(const Event* events, const char* fileName, unsigned int co
 
     outFile << "EVENT_COUNT=" << count << std::endl;
 
-    for (unsigned int i = 0; i < count; ++i) {
+    for (unsigned int i = 0; i < count; i++) {
         outFile << "\n[EVENT_" << i << "]" << std::endl;
 
         if (!saveEventToFile(events[i], outFile)) {
@@ -309,7 +211,7 @@ bool saveEventsToFile(const Event* events, const char* fileName, unsigned int co
     return true;
 }
 
-unsigned int searchEventsByDescription(Event*& events, Event*& filteredEvents, const char descr[], unsigned int count) {
+unsigned int findByDescription(Event*& events, Event*& filteredEvents, const char descr[], unsigned int count) {
     if (count == 0 || events == nullptr) {
         std::cout << "No events to process." << std::endl;
 
@@ -332,8 +234,8 @@ unsigned int searchEventsByDescription(Event*& events, Event*& filteredEvents, c
 
     unsigned int filteredCount = 0;
 
-    for (unsigned int i = 0; i < count; ++i) {
-        if (findSubstring(events[i].description, descr)) {
+    for (unsigned int i = 0; i < count; i++) {
+        if (isSubstring(events[i].description, descr)) {
             filteredCount++;
             flags[i] = 1;
         }
@@ -355,7 +257,7 @@ unsigned int searchEventsByDescription(Event*& events, Event*& filteredEvents, c
 
     unsigned int current = 0;
 
-    for (unsigned int i = 0; i < count; ++i) {
+    for (unsigned int i = 0; i < count; i++) {
         if (flags[i] == 1) filteredEvents[current++] = events[i];
     }
 
@@ -363,7 +265,7 @@ unsigned int searchEventsByDescription(Event*& events, Event*& filteredEvents, c
     return filteredCount;
 }
 
-unsigned int searchEventsByLevel(EmergencyLevel level, Event*& events, Event*& filteredEvents, unsigned int count) {
+unsigned int findByEmergencyLevel(EmergencyLevel level, Event*& events, Event*& filteredEvents, unsigned int count) {
     if (count == 0 || events == nullptr) {
         std::cout << "No events to process." << std::endl;
 
@@ -380,8 +282,8 @@ unsigned int searchEventsByLevel(EmergencyLevel level, Event*& events, Event*& f
 
     unsigned int filteredCount = 0;
 
-    for (unsigned int i = 0; i < count; ++i) {
-        if (events[i].emergency == level) {
+    for (unsigned int i = 0; i < count; i++) {
+        if (events[i].level == level) {
             filteredCount++;
             flags[i] = 1;
         }
@@ -403,7 +305,7 @@ unsigned int searchEventsByLevel(EmergencyLevel level, Event*& events, Event*& f
 
     unsigned int current = 0;
 
-    for (unsigned int i = 0; i < count; ++i) {
+    for (unsigned int i = 0; i < count; i++) {
         if (flags[i] == 1) filteredEvents[current++] = events[i];
     }
 
@@ -411,7 +313,7 @@ unsigned int searchEventsByLevel(EmergencyLevel level, Event*& events, Event*& f
     return filteredCount;
 }
 
-unsigned int searchEventsByLocation(Event*& events, Event*& filteredEvents, const int params[], unsigned int count) {
+unsigned int findByLocation(Event*& events, Event*& filteredEvents, const int params[], unsigned int count) {
     if (count == 0 || events == nullptr) {
         std::cout << "No events to process." << std::endl;
 
@@ -428,8 +330,8 @@ unsigned int searchEventsByLocation(Event*& events, Event*& filteredEvents, cons
 
     unsigned int filteredCount = 0;
 
-    for (unsigned int i = 0; i < count; ++i) {
-        if (isInRange(events[i], params[0], params[1], params[2])) {
+    for (unsigned int i = 0; i < count; i++) {
+        if (isEventInRange(events[i], params[0], params[1], params[2])) {
             filteredCount++;
             flags[i] = 1;
         }
@@ -451,7 +353,7 @@ unsigned int searchEventsByLocation(Event*& events, Event*& filteredEvents, cons
 
     unsigned int current = 0;
 
-    for (unsigned int i = 0; i < count; ++i) {
+    for (unsigned int i = 0; i < count; i++) {
         if (flags[i] == 1) filteredEvents[current++] = events[i];
     }
 
@@ -469,19 +371,19 @@ unsigned int searchEventsInFile(Event*& filteredEvents, const char* fileName) {
     Event* events = nullptr;
     unsigned int count = 0, filteredCount = 0;
 
-    if (!loadEventsFromFile(events, fileName, &count)) {
+    if (!loadEventsFromFile(events, fileName, count)) {
         delete[] events;
         std::cout << "Failed to load events from file." << std::endl;
 
         return 0;
     }
 
-    SearchOption criteria = getSearchOptionFromUser();
+    SearchOption option = readSearchOption();
 
     EmergencyLevel level;
     int params[3] = { 0 };
 
-    switch (criteria) {
+    switch (option) {
     case DESCRIPTION:
         std::cin.clear();
         std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
@@ -500,13 +402,13 @@ unsigned int searchEventsInFile(Event*& filteredEvents, const char* fileName) {
             std::cout << "Error. Please try again." << std::endl;
         }
 
-        filteredCount = searchEventsByDescription(events, filteredEvents, descr, count);
+        filteredCount = findByDescription(events, filteredEvents, descr, count);
 
         break;
     case EMERGENCY_LEVEL:
-        level = getEmergencyLevelFromUser();
+        level = readEmergencyLevel();
 
-        filteredCount = searchEventsByLevel(level, events, filteredEvents, count);
+        filteredCount = findByEmergencyLevel(level, events, filteredEvents, count);
 
         break;
     case LOCATION:
@@ -522,7 +424,7 @@ unsigned int searchEventsInFile(Event*& filteredEvents, const char* fileName) {
             std::cout << "Error. Please try again." << std::endl;
         }
 
-        filteredCount = searchEventsByLocation(events, filteredEvents, params, count);
+        filteredCount = findByLocation(events, filteredEvents, params, count);
 
         break;
     default:
@@ -533,8 +435,8 @@ unsigned int searchEventsInFile(Event*& filteredEvents, const char* fileName) {
 }
 
 void printEvent(const Event& event) {
-    std::cout << "--- Events Information ---" << std::endl;
+    std::cout << "--- Event Information ---" << std::endl;
     std::cout << "Description: " << event.description << std::endl;
-    std::cout << "Emergency level: " << EMERGENCY_LEVELS[event.emergency] << std::endl;
+    std::cout << "Emergency level: " << EMERGENCY_LEVELS[event.level] << std::endl;
     std::cout << "Location: (" << event.location.x << ", " << event.location.y << ")" << std::endl;
 }

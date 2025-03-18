@@ -1,9 +1,8 @@
 #include <iostream>
 
-#include "smart_city.hpp"
+#include "event.hpp"
 
 const char fileName[] = "event_data.txt";
-const unsigned int MIN_BUILDING_COUNT = 1;
 const unsigned int MIN_EVENT_COUNT = 1;
 
 int main() {
@@ -29,7 +28,7 @@ int main() {
         return 1;
     }
 
-    for (unsigned int i = 0; i < count; ++i) {
+    for (unsigned int i = 0; i < count; i++) {
         std::cout << "Enter details for event " << (i + 1) << "..." << std::endl;
 
         events[i] = readEvent();
@@ -56,7 +55,7 @@ int main() {
 
     std::cout << "Filtered events:" << std::endl;
 
-    for (unsigned int i = 0; i < filteredCount; ++i) {
+    for (unsigned int i = 0; i < filteredCount; i++) {
         printEvent(filteredEvents[i]);
     }
 
