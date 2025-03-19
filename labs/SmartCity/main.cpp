@@ -1,65 +1,69 @@
 #include <iostream>
 
-#include "event.hpp"
+#include "building.hpp"
 
-const char fileName[] = "event_data.txt";
-const unsigned int MIN_EVENT_COUNT = 1;
+const char* fileName = "buildings.bin";
 
 int main() {
-    unsigned int count;
+    Building* buildings = nullptr;
+    unsigned int count = 0;
 
-    while (true) {
-        std::cout << "Enter the number of events: ";
+    std::cout << "Enter the number of buildings: ";
 
-        std::cin >> count;
+    std::cin >> count;
 
-        if (std::cin.good() && count >= MIN_EVENT_COUNT) break;
+    if (count == 0) {
+        std::cout << "No buildings to process." << std::endl;
 
-        std::cin.clear();
-        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-        std::cout << "Error. Please try again." << std::endl;
+        return 0;
     }
 
-    Event* events = new (std::nothrow) Event[count];
+    buildings = new (std::nothrow) Building[count];
 
-    if (events == nullptr) {
+    if (!buildings) {
         std::cerr << "Memory allocation failed. Exiting program." << std::endl;
 
         return 1;
     }
 
     for (unsigned int i = 0; i < count; i++) {
-        std::cout << "Enter details for event " << (i + 1) << "..." << std::endl;
+        std::cout << "Enter details for building " << (i + 1) << "..." << std::endl;
 
-        events[i] = readEvent();
+        buildings[i] = readBuilding();
     }
 
-    if (!saveEventsToFile(events, fileName, count)) {
-        delete[] events;
-        std::cerr << "Failed to save events to file." << std::endl;
+    if (!saveBuildingsToFile(buildings, fileName, count)) {
+        delete[] buildings;
+        std::cout << "Failed to save buildings to file." << std::endl;
 
         return 1;
     }
 
-    std::cout << "Events successfully saved to file." << std::endl;
+    delete[] buildings;
+    std::cout << "Buildings saved successfully." << std::endl;
 
-    Event* filteredEvents = nullptr;
-    unsigned int filteredCount = searchEventsInFile(filteredEvents, fileName);
-
-    if (!filteredEvents) {
-        delete[] events;
-        std::cerr << "Memory allocation failed. Exiting program." << std::endl;
+    if (!loadBuildingsFromFile(buildings, fileName, count)) {
+        std::cout << "Failed to load buildings from file." << std::endl;
 
         return 1;
     }
 
-    std::cout << "Filtered events:" << std::endl;
+    std::cout << "Loaded buildings from file..." << std::endl;
 
-    for (unsigned int i = 0; i < filteredCount; i++) {
-        printEvent(filteredEvents[i]);
+    for (unsigned int i = 0; i < count; i++) {
+        printBuilding(buildings[i]);
     }
 
-    delete[] events;
-    delete[] filteredEvents;
+    Building* operationalBuildings = nullptr;
+    unsigned int operationalCount = searchOperationalBuildings(operationalBuildings, fileName);
+
+    std::cout << "Operational buildings: " << operationalCount << std::endl;
+
+    for (unsigned int i = 0; i < operationalCount; i++) {
+        printBuilding(operationalBuildings[i]);
+    }
+
+    delete[] buildings;
+    delete[] operationalBuildings;
     return 0;
 }

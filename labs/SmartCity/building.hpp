@@ -1,5 +1,7 @@
 #pragma once
 
+#include <fstream>
+
 #include "building_type.hpp"
 #include "common.hpp"
 
@@ -13,4 +15,9 @@ struct Building {
 };
 
 Building readBuilding();
+bool loadBuildingFromFile(Building& building, std::ifstream& file);
+bool loadBuildingsFromFile(Building*& buildings, const char* fileName, unsigned int& count);
+bool saveBuildingToFile(const Building& building, std::ofstream& file);
+bool saveBuildingsToFile(const Building* buildings, const char* fileName, unsigned int count);
+unsigned int searchOperationalBuildings(Building*& filteredBuildings, const char* fileName);
 void printBuilding(const Building& building);
