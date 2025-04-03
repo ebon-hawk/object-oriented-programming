@@ -186,6 +186,5 @@ bool Player::receiveDamage(int damage) {
 
     int modifiedHealth = currentHealth - damage;
     modifiedHealth = (modifiedHealth < 0) ? 0 : modifiedHealth;
-
     return setCurrentHealth(modifiedHealth);
 }

@@ -1,37 +1,37 @@
 #include <iostream>
 
+#include "enemy.hpp"
 #include "player.hpp"
-#include "weapon.hpp"
 
 int main() {
-    Player p;
-    p.initialize(100.0f, 150, 100, 75);
-    p.showStats();
+    // Test parameterized constructor
+    Enemy customEnemy("Ender Dragon", 100, 500, 500);
+    customEnemy.showStats();
 
-    // Set specific health and mana values
-    p.setCurrentHealth(100);
-    p.setCurrentMana(50);
+    // Test assignment operator
+    Enemy anotherEnemy;
+    anotherEnemy.showStats();
 
-    Weapon w;
-    w.initialize();
-    w.showStats();
+    anotherEnemy = customEnemy;
+    std::cout << "Stats after assignment..." << std::endl;
 
-    // Equip the weapon to the player (for slot 0)
-    if (!p.equipWeapon(w, 0)) std::cout << "Failed to equip weapon." << std::endl;
+    anotherEnemy.showStats();
 
-    std::cout << "Weapon equipped successfully." << std::endl;
+    // Test attacking and receiving damage
+    Player player;
+    player.initialize(100.0f, 150, 100, 75);
 
-    // Test consuming health flask
-    if (!p.consumeHealthFlask()) std::cout << "Failed to consume health flask." << std::endl;
+    if (customEnemy.attack(player)) std::cout << "Enemy successfully attacked the player." << std::endl;
+    else std::cout << "Attack failed." << std::endl;
 
-    std::cout << "Health flask consumed successfully." << std::endl;
+    if (customEnemy.receiveDamage(30)) {
+        std::cout << "Enemy received damage." << std::endl;
 
-    // Test consuming mana flask
-    if (!p.consumeManaFlask()) std::cout << "Failed to consume mana flask." << std::endl;
+        customEnemy.showStats();
+    }
+    else {
+        std::cout << "Damage could not be applied." << std::endl;
+    }
 
-    std::cout << "Mana flask consumed successfully." << std::endl;
-
-    // Display updated player stats
-    p.showStats();
     return 0;
 }

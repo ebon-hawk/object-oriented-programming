@@ -29,7 +29,6 @@ private:
 
     Weapon equippedWeapons[SLOT_COUNT];
     uint8_t isWeaponSlotOccupied[SLOT_COUNT];
-
 public:
     void initialize(float capacity, int health, int mana, int stamina);
     void showStats() const;
