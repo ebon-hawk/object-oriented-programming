@@ -1,57 +1,98 @@
 #define _CRT_SECURE_NO_WARNINGS
 
-#include <cstring>
 #include <iostream>
-#include <limits>
+#include <stdexcept>
 
 #include "weapon.hpp"
 
-void Weapon::initialize() {
-    std::cout << "Enter the weapon's damage, minimum strength required to wield it, and weight: ";
+Weapon& Weapon::operator=(const Weapon& other) {
+    if (&other == this) return *this;
 
-    float weight;
-    int damage;
-    unsigned int minStrength;
+    if (other.requiredStrength <= requiredStrength) {
+        Weapon weapon(other);
+        delete[] name;
+        name = nullptr;
+        std::swap(name, weapon.name);
 
-    while (true) {
-        std::cin >> damage >> minStrength >> weight;
-
-        if (std::cin.good()) break;
-
-        std::cin.clear();
-        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-        std::cout << "Error. Please try again." << std::endl;
+        damage = weapon.damage;
+        requiredStrength = weapon.requiredStrength;
+        weight = weapon.weight;
     }
+
+    return *this;
+}
+
+Weapon::Weapon()
+    : name(new char[1]), weight(0), damage(0), requiredStrength(0) {
+    name[0] = '\0';
+}
+
+Weapon::Weapon(const Weapon& other)
+    : name(nullptr),
+    weight(other.weight),
+    damage(other.damage),
+    requiredStrength(other.requiredStrength) {
+    if (!setName(other.name)) {
+        throw std::bad_alloc();
+    }
+}
+
+Weapon::Weapon(const char* name, float weight, int damage, unsigned int requiredStrength)
+    : name(nullptr), weight(0), damage(0), requiredStrength(0) {
+    if (!setDamage(damage) || !setName(name) ||
+        !setRequiredStrength(requiredStrength) || !setWeight(weight)) {
+        throw std::invalid_argument("Weapon constructor failed: one or more arguments are invalid.");
+    }
+}
+
+Weapon::~Weapon() {
+    delete[] name;
+}
+
+bool Weapon::setDamage(int damage) {
+    if (damage < 0) return false;
 
     this->damage = damage;
-    this->minStrength = minStrength;
+
+    return true;
+}
+
+bool Weapon::setName(const char* name) {
+    if (!name || name[0] == '\0') return false;
+
+    char* temp = new(std::nothrow) char[strlen(name) + 1];
+
+    if (!temp) return false;
+
+    delete[] this->name;
+    strcpy(temp, name);
+    this->name = temp;
+
+    return true;
+}
+
+bool Weapon::setRequiredStrength(unsigned int requiredStrength) {
+    if (requiredStrength < 0) return false;
+
+    this->requiredStrength = requiredStrength;
+
+    return true;
+}
+
+bool Weapon::setWeight(float weight) {
+    if (weight < 0) return false;
+
     this->weight = weight;
 
-    std::cin.clear();
-    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-    std::cout << "Enter the weapon's name: ";
-
-    char name[MAX_WEAPON_NAME];
-
-    while (true) {
-        std::cin.getline(name, MAX_WEAPON_NAME);
-
-        if (std::cin.good() && name[0] != '\0') break;
-
-        std::cin.clear();
-        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-        std::cout << "Error. Please try again." << std::endl;
-    }
-
-    std::strncpy(this->name, name, MAX_WEAPON_NAME - 1);
-    this->name[MAX_WEAPON_NAME - 1] = '\0';
+    return true;
 }
 
 void Weapon::showStats() const {
-    std::cout << "--- Weapon Stats ---"
-        << "\nName: " << name
-        << "\nMinimum strength required: " << minStrength
+    std::cout
+        << "--- WEAPON STATS ---"
         << "\nDamage: " << damage
+        << "\nName: " << name
+        << "\nRequired strength: " << requiredStrength
         << "\nWeight: " << weight
         << std::endl;
 }

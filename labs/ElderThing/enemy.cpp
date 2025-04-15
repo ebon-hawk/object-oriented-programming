@@ -2,94 +2,91 @@
 
 #include <cstring>
 #include <iostream>
+#include <stdexcept>
 
 #include "enemy.hpp"
 
-// Setters
-bool Enemy::setAttackPower(int value) {
-    if (value < 0) return false;
-
-    attackPower = value;
-    return true;
-}
-
-bool Enemy::setCurrentHealth(int value) {
-    if (value < 0 || value > maxHealth) return false;
-
-    currentHealth = value;
-    return true;
-}
-
-bool Enemy::setMaxHealth(int value) {
-    if (value < 0) return false;
-
-    maxHealth = value;
-    return true;
-}
-
-bool Enemy::setName(char*& oldName, const char* newName) {
-    if (!newName || newName == oldName) return false;
-
-    char* temp = new (std::nothrow) char[strlen(newName) + 1];
-
-    if (!temp) return false;
-
-    delete[] oldName;
-    strcpy(temp, newName);
-
-    oldName = temp;
-    return true;
-}
-
-// Assignment operator
 Enemy& Enemy::operator=(const Enemy& other) {
-    if (this == &other) return *this;
+    if (&other == this) return *this;
 
-    attackPower = other.attackPower;
-    currentHealth = other.currentHealth;
-    maxHealth = other.maxHealth;
+    Enemy enemy(other);
+    delete[] name;
+    name = nullptr;
+    std::swap(name, enemy.name);
 
-    if (name != other.name) {
-        if (!setName(name, other.name)) throw;
-    }
-
+    attackPower = enemy.attackPower;
+    currentHealth = enemy.currentHealth;
+    maxHealth = enemy.maxHealth;
     return *this;
 }
 
-// Constructors
-Enemy::Enemy() :
-    attackPower(DEFAULT_ENEMY_ATTACK_POWER),
-    currentHealth(DEFAULT_ENEMY_HEALTH),
-    maxHealth(DEFAULT_ENEMY_HEALTH),
-    name(nullptr) {
-    if (!setName(this->name, "Mysterious Foe")) throw;
+Enemy::Enemy()
+    : name(new char[1]), attackPower(0), currentHealth(0), maxHealth(0) {
+    name[0] = '\0';
 }
 
-Enemy::Enemy(const Enemy& other) :
+Enemy::Enemy(const Enemy& other)
+    : name(nullptr),
     attackPower(other.attackPower),
     currentHealth(other.currentHealth),
-    maxHealth(other.maxHealth),
-    name(nullptr) {
-    if (!setName(name, other.name)) throw;
+    maxHealth(other.maxHealth) {
+    if (!setName(other.name)) {
+        throw std::bad_alloc();
+    }
 }
 
-Enemy::Enemy(const char* name, int attackPower, int currentHealth, int maxHealth) :
-    attackPower(DEFAULT_ENEMY_ATTACK_POWER),
-    currentHealth(DEFAULT_ENEMY_HEALTH),
-    maxHealth(DEFAULT_ENEMY_HEALTH),
-    name(nullptr) {
-    if (!setName(this->name, name) || !setMaxHealth(maxHealth) ||
-        !setCurrentHealth(currentHealth) || !setAttackPower(attackPower)) {
-        delete[] this->name;
-        throw;
+Enemy::Enemy(const char* name, int attackPower, int maxHealth)
+    : name(nullptr), attackPower(0), currentHealth(0), maxHealth(0) {
+    if (!setAttackPower(attackPower) || !setMaxHealth(maxHealth) || !setName(name)) {
+        throw std::invalid_argument("Enemy constructor failed: one or more arguments are invalid.");
     }
+
+    currentHealth = maxHealth;
 }
 
 Enemy::~Enemy() {
     delete[] name;
 }
 
-// General
+bool Enemy::setAttackPower(int attackPower) {
+    if (attackPower < 0) return false;
+
+    this->attackPower = attackPower;
+
+    return true;
+}
+
+bool Enemy::setCurrentHealth(int currentHealth) {
+    if (currentHealth < 0 || currentHealth > maxHealth) return false;
+
+    this->currentHealth = currentHealth;
+
+    return true;
+}
+
+bool Enemy::setMaxHealth(int maxHealth) {
+    if (maxHealth < 0) return false;
+
+    this->maxHealth = maxHealth;
+
+    return true;
+}
+
+bool Enemy::setName(const char* name) {
+    if (!name || name[0] == '\0') return false;
+
+    char* temp = new(std::nothrow) char[strlen(name) + 1];
+
+    if (!temp) return false;
+
+    delete[] this->name;
+    strcpy(temp, name);
+    this->name = temp;
+
+    return true;
+}
+
+// Other methods
 bool Enemy::attack(Player& player) const {
     return player.receiveDamage(attackPower);
 }
@@ -103,9 +100,10 @@ bool Enemy::receiveDamage(int damage) {
 }
 
 void Enemy::showStats() const {
-    std::cout << "--- Enemy Stats ---"
-        << "\nName: " << name
-        << "\nHealth: " << currentHealth << "/" << maxHealth
+    std::cout
+        << "--- ENEMY STATS ---"
         << "\nAttack power: " << attackPower
+        << "\nCurrent health: " << currentHealth << "/" << maxHealth
+        << "\nName: " << name
         << std::endl;
 }

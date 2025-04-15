@@ -2,27 +2,32 @@
 
 #include "player.hpp"
 
-const int DEFAULT_ENEMY_ATTACK_POWER = 10;
-const int DEFAULT_ENEMY_HEALTH = 100;
-
 class Enemy {
-private:
-    int attackPower, currentHealth, maxHealth;
-
-    char* name;
-
-    bool setAttackPower(int value);
-    bool setCurrentHealth(int value);
-    bool setMaxHealth(int value);
-    bool setName(char*& oldName, const char* newName);
 public:
-    Enemy& operator=(const Enemy& other);
     Enemy();
     Enemy(const Enemy& other);
-    Enemy(const char* name, int attackPower, int currentHealth, int maxHealth);
+    Enemy(const char* name, int attackPower, int maxHealth);
+
     ~Enemy();
+
+    Enemy& operator=(const Enemy& other);
+
+    bool setName(const char* name);
+    const char* getName() const { return name; }
+
+    bool setAttackPower(int attackPower);
+    int getAttackPower() const { return attackPower; }
+
+    bool setCurrentHealth(int currentHealth);
+    int getCurrentHealth() const { return currentHealth; }
+
+    bool setMaxHealth(int maxHealth);
+    int getMaxHealth() const { return maxHealth; }
 
     bool attack(Player& player) const;
     bool receiveDamage(int damage);
     void showStats() const;
+private:
+    char* name;
+    int attackPower, currentHealth, maxHealth;
 };
