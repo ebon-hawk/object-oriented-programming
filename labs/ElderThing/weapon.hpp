@@ -2,26 +2,27 @@
 
 class Weapon {
 public:
-    Weapon();
+    Weapon(Weapon&& other) noexcept;
     Weapon(const Weapon& other);
     Weapon(const char* name, float weight, int damage, unsigned int requiredStrength);
 
     ~Weapon();
 
+    Weapon& operator=(Weapon&& other) noexcept;
     Weapon& operator=(const Weapon& other);
 
-    bool setName(const char* name);
+    // Getters
     const char* getName() const { return name; }
-
-    bool setWeight(float weight);
     float getWeight() const { return weight; }
-
-    bool setDamage(int damage);
     int getDamage() const { return damage; }
-
-    bool setRequiredStrength(unsigned int requiredStrength);
     unsigned int getRequiredStrength() const { return requiredStrength; }
 
+    // Setters
+    bool setDamage(int damage);
+    bool setName(const char* name);
+    bool setWeight(float weight);
+
+    // Misc.
     void showStats() const;
 private:
     char* name;

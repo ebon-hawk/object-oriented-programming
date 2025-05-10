@@ -42,17 +42,6 @@ Spell& Spell::operator=(const Spell& other) {
     return *this;
 }
 
-Spell::Spell()
-    : name(new char[1]),
-    damage(0),
-    manaCost(0),
-    cooldown(0),
-    remainingCooldown(0),
-    requiredFaith(0),
-    requiredIntelligence(0) {
-    name[0] = '\0';
-}
-
 Spell::Spell(Spell&& other) noexcept
     : name(other.name),
     damage(other.damage),
@@ -73,7 +62,7 @@ Spell::Spell(const Spell& other)
     requiredFaith(other.requiredFaith),
     requiredIntelligence(other.requiredIntelligence) {
     if (!setName(other.name)) {
-        throw std::bad_alloc();
+        throw std::runtime_error("Failed to set name from copied object.");
     }
 }
 
@@ -95,17 +84,6 @@ Spell::Spell(const char* name, int damage, int manaCost,
 
 Spell::~Spell() {
     delete[] name;
-}
-
-bool Spell::decrementCooldown() {
-    if (remainingCooldown == 0) return false;
-
-    remainingCooldown--;
-    return true;
-}
-
-bool Spell::isOnCooldown() const {
-    return remainingCooldown > 0;
 }
 
 bool Spell::setCooldown(unsigned int cooldown) {
@@ -144,6 +122,17 @@ bool Spell::setName(const char* name) {
     this->name = temp;
 
     return true;
+}
+
+// Misc.
+bool Spell::isOnCooldown() const {
+    return remainingCooldown > 0;
+}
+
+void Spell::decrementCooldown() {
+    if (remainingCooldown == 0) return;
+
+    remainingCooldown--;
 }
 
 void Spell::resetCooldown() {

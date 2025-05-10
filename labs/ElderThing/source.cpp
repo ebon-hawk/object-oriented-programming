@@ -3,37 +3,53 @@
 
 #include "enemy.hpp"
 #include "player.hpp"
+#include "spell.hpp"
 
 int main() {
     try {
-        Enemy e1("Murloc", 15, 75);
-        e1.showStats();
+        Enemy enemy("Murloc", 15, 75);
+        enemy.showStats();
 
-        Enemy e2;
-        e2.showStats();
+        Player player(10, 12, 8, 15, 10);
 
-        e2 = e1;
-        std::cout << "Stats after assignment..." << std::endl;
-
-        e2.showStats();
-
-        Player player(100, 150, 100, 75);
-
-        if (e1.attack(player)) {
-            std::cout << "Enemy successfully attacked the player." << std::endl;
+        if (enemy.attack(player)) {
+            std::cout << "Enemy successfully attacked the player.\n";
         }
         else {
-            std::cout << "Attack failed." << std::endl;
+            std::cout << "Attack failed.\n";
         }
 
-        if (e1.receiveDamage(30)) {
-            std::cout << "Enemy received damage." << std::endl;
+        if (enemy.receiveDamage(30)) {
+            std::cout << "Enemy received damage.\n";
 
-            e1.showStats();
+            enemy.showStats();
         }
         else {
-            std::cout << "Damage could not be applied." << std::endl;
+            std::cout << "Damage could not be applied.\n";
         }
+
+        std::cout << "Learning spells...\n";
+
+        Spell fireball("Fireball", 30, 20, 5, 10, 5);
+
+        if (player.learnSpell(fireball)) std::cout << "Learned Fireball.\n";
+
+        Spell heal("Heal", 0, 15, 3, 8, 6);
+
+        if (player.learnSpell(heal)) std::cout << "Learned Heal.\n";
+
+        if (player.learnSpell(Spell("Frostbite", 40, 22, 6, 9, 9))) {
+            std::cout << "Learned Frostbite via move.\n";
+        }
+
+        std::cout << "Deep copying spells...\n";
+
+        Player copiedPlayer = player;
+        copiedPlayer.showStats();
+        std::cout << "Move test...\n";
+
+        Player movedPlayer = std::move(player);
+        movedPlayer.showStats();
     }
     catch (const std::bad_alloc& e) {
         std::cerr << "Memory allocation failed: " << e.what() << std::endl;

@@ -5,6 +5,22 @@
 
 #include "weapon.hpp"
 
+Weapon& Weapon::operator=(Weapon&& other) noexcept {
+    if (&other == this) return *this;
+
+    if (other.requiredStrength <= requiredStrength) {
+        delete[] name;
+        name = other.name;
+        other.name = nullptr;
+
+        damage = other.damage;
+        requiredStrength = other.requiredStrength;
+        weight = other.weight;
+    }
+
+    return *this;
+}
+
 Weapon& Weapon::operator=(const Weapon& other) {
     if (&other == this) return *this;
 
@@ -22,9 +38,12 @@ Weapon& Weapon::operator=(const Weapon& other) {
     return *this;
 }
 
-Weapon::Weapon()
-    : name(new char[1]), weight(0), damage(0), requiredStrength(0) {
-    name[0] = '\0';
+Weapon::Weapon(Weapon&& other) noexcept
+    : name(other.name),
+    weight(other.weight),
+    damage(other.damage),
+    requiredStrength(other.requiredStrength) {
+    other.name = nullptr;
 }
 
 Weapon::Weapon(const Weapon& other)
@@ -33,14 +52,13 @@ Weapon::Weapon(const Weapon& other)
     damage(other.damage),
     requiredStrength(other.requiredStrength) {
     if (!setName(other.name)) {
-        throw std::bad_alloc();
+        throw std::runtime_error("Failed to set name from copied object.");
     }
 }
 
 Weapon::Weapon(const char* name, float weight, int damage, unsigned int requiredStrength)
-    : name(nullptr), weight(0), damage(0), requiredStrength(0) {
-    if (!setDamage(damage) || !setName(name) ||
-        !setRequiredStrength(requiredStrength) || !setWeight(weight)) {
+    : name(nullptr), weight(0), damage(0), requiredStrength(requiredStrength) {
+    if (!setDamage(damage) || !setName(name) || !setWeight(weight)) {
         throw std::invalid_argument("Weapon constructor failed: one or more arguments are invalid.");
     }
 }
@@ -67,14 +85,6 @@ bool Weapon::setName(const char* name) {
     delete[] this->name;
     strcpy(temp, name);
     this->name = temp;
-
-    return true;
-}
-
-bool Weapon::setRequiredStrength(unsigned int requiredStrength) {
-    if (requiredStrength < 0) return false;
-
-    this->requiredStrength = requiredStrength;
 
     return true;
 }

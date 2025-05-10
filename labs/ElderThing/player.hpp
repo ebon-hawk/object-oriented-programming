@@ -1,70 +1,132 @@
 #pragma once
 
-#include <cstdint>
-
+#include "spell.hpp"
 #include "weapon.hpp"
 
 class Player {
 public:
-    static const unsigned int MAX_LEVEL = 99;
-    static const unsigned int MAX_SLOT_COUNT = 3;
+    static const float CARRYING_CAPACITY_PER_STRENGTH;
+    static const float STRENGTH_INCREMENT;
 
+    static const int BASE_HEALTH = 100, HEALTH_PER_ENDURANCE = 10;
+    static const int BASE_MANA = 50, MANA_PER_INTELLIGENCE = 5;
+    static const int BASE_STAMINA = 50, STAMINA_PER_ENDURANCE = 5;
+    static const int DEXTERITY_INCREMENT = 1;
+    static const int ENDURANCE_INCREMENT = 1;
+    static const int FAITH_INCREMENT = 1;
+    static const int INTELLIGENCE_INCREMENT = 1;
+
+    static const size_t INITIAL_SPELL_CAPACITY = 10;
+    static const size_t INITIAL_WEAPON_CAPACITY = 5;
+
+    static const unsigned int DEFAULT_HEALTH_FLASK_CHARGES = 5;
+    static const unsigned int DEFAULT_MANA_FLASK_CHARGES = 5;
+    static const unsigned int DEFAULT_PLAYER_LEVEL = 1;
+    static const unsigned int DEFAULT_PLAYER_RUNES = 0;
+    static const unsigned int LEVEL_INCREMENT = 1;
+
+    Player(Player&& other) noexcept;
     Player(const Player& other);
-    Player(float carryingCapacity, int maxHealth, int maxMana, int maxStamina);
+    Player(float strength, int dexterity, int endurance, int faith, int intelligence);
 
-    ~Player() = default;
+    ~Player();
 
+    Player& operator=(Player&& other) noexcept;
     Player& operator=(const Player& other);
 
-    bool setCarryingCapacity(float carryingCapacity);
+    // Getters
+    const Spell* const* getSpells() const { return spells; }
+    const Weapon* const* getWeapons() const { return weapons; }
+
     float getCarryingCapacity() const { return carryingCapacity; }
-
-    bool setEncumbrance(float encumbrance);
     float getEncumbrance() const { return encumbrance; }
+    float getStrength() const { return strength; }
 
-    bool setCurrentHealth(int currentHealth);
     int getCurrentHealth() const { return currentHealth; }
-
-    bool setCurrentMana(int currentMana);
     int getCurrentMana() const { return currentMana; }
-
-    bool setCurrentStamina(int currentStamina);
     int getCurrentStamina() const { return currentStamina; }
-
-    bool setMaxHealth(int maxHealth);
+    int getDexterity() const { return dexterity; }
+    int getEndurance() const { return endurance; }
+    int getFaith() const { return faith; }
+    int getIntelligence() const { return intelligence; }
     int getMaxHealth() const { return maxHealth; }
-
-    bool setMaxMana(int maxMana);
     int getMaxMana() const { return maxMana; }
-
-    bool setMaxStamina(int maxStamina);
     int getMaxStamina() const { return maxStamina; }
 
-    bool setHealthFlaskCharges(unsigned int healthFlaskCharges);
+    size_t getCurrentSpellIndex() const { return currentSpellIndex; }
+    size_t getCurrentWeaponIndex() const { return currentWeaponIndex; }
+    size_t getSpellCount() const { return spellCount; }
+    size_t getWeaponCount() const { return weaponCount; }
+
     unsigned int getHealthFlaskCharges() const { return healthFlaskCharges; }
-
-    bool setLevel(unsigned int level);
     unsigned int getLevel() const { return level; }
-
-    bool setManaFlaskCharges(unsigned int manaFlaskCharges);
     unsigned int getManaFlaskCharges() const { return manaFlaskCharges; }
-
     unsigned int getRunes() const { return runes; }
-    void setRunes(unsigned int runes) { this->runes = runes; }
 
+    // Setters
+    bool setCarryingCapacity(float carryingCapacity);
+    bool setCurrentHealth(int currentHealth);
+    bool setCurrentMana(int currentMana);
+    bool setCurrentStamina(int currentStamina);
+    bool setEncumbrance(float encumbrance);
+    bool setHealthFlaskCharges(unsigned int healthFlaskCharges);
+    bool setManaFlaskCharges(unsigned int manaFlaskCharges);
+    bool setMaxHealth(int maxHealth);
+    bool setMaxMana(int maxMana);
+    bool setMaxStamina(int maxStamina);
+
+    // Character stat management
+    void increaseDexterity();
+    void increaseEndurance();
+    void increaseFaith();
+    void increaseIntelligence();
+    void increaseLevel();
+    void increaseStrength();
+
+    // Resource management
     bool consumeHealthFlask();
     bool consumeManaFlask();
-    bool equipWeapon(const Weapon& weapon, unsigned int slot);
+    void decreaseRunes(unsigned int decrement);
+    void increaseRunes(unsigned int increment) { runes += increment; }
+
+    // Spell management
+    bool castSpell();
+    bool learnSpell(Spell&& spell);
+    bool learnSpell(const Spell& spell);
+    bool removeSpell(size_t index);
+    bool setActiveSpell(size_t index);
+    void decrementSpellCooldowns();
+
+    // Weapon management
+    bool addWeapon(Weapon&& weapon);
+
+    // Misc.
     bool receiveDamage(int damage);
     void showStats() const;
 private:
-    float carryingCapacity, encumbrance;
+    float carryingCapacity, encumbrance, strength;
+
     int currentHealth, maxHealth;
     int currentMana, maxMana;
     int currentStamina, maxStamina;
+    int dexterity, endurance, faith, intelligence;
+
     unsigned int healthFlaskCharges, manaFlaskCharges;
     unsigned int level, runes;
 
-    Weapon equippedWeapons[MAX_SLOT_COUNT];
-    uint8_t isWeaponSlotOccupied[MAX_SLOT_COUNT];
+    Spell** spells = nullptr;
+    size_t currentSpellIndex, spellCount;
+
+    Weapon** weapons = nullptr;
+    size_t currentWeaponIndex, weaponCount;
+
+    // Spell management
+    bool copySpells(const Spell* const* source, size_t count);
+    void clearSpells();
+    void initializeSpells(size_t capacity);
+
+    // Weapon management
+    bool copyWeapons(const Weapon* const* source, size_t count);
+    void clearWeapons();
+    void initializeWeapons(size_t capacity);
 };

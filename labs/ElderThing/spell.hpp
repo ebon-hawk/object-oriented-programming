@@ -2,7 +2,6 @@
 
 class Spell {
 public:
-    Spell();
     Spell(Spell&& other) noexcept;
     Spell(const Spell& other);
     Spell(const char* name, int damage, int manaCost,
@@ -13,24 +12,24 @@ public:
     Spell& operator=(Spell&& other) noexcept;
     Spell& operator=(const Spell& other);
 
-    bool setName(const char* name);
+    // Getters
     const char* getName() const { return name; }
-
-    bool setDamage(int damage);
     int getDamage() const { return damage; }
-
-    bool setManaCost(int manaCost);
     int getManaCost() const { return manaCost; }
-
-    bool setCooldown(unsigned int cooldown);
     unsigned int getCooldown() const { return cooldown; }
-
     unsigned int getRemainingCooldown() const { return remainingCooldown; }
     unsigned int getRequiredFaith() const { return requiredFaith; }
     unsigned int getRequiredIntelligence() const { return requiredIntelligence; }
 
-    bool decrementCooldown();
+    // Setters
+    bool setCooldown(unsigned int cooldown);
+    bool setDamage(int damage);
+    bool setManaCost(int manaCost);
+    bool setName(const char* name);
+
+    // Misc.
     bool isOnCooldown() const;
+    void decrementCooldown();
     void resetCooldown();
     void showStats() const;
 private:

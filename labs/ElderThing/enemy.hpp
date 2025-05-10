@@ -4,26 +4,28 @@
 
 class Enemy {
 public:
-    Enemy();
+    Enemy(Enemy&& other) noexcept;
     Enemy(const Enemy& other);
     Enemy(const char* name, int attackPower, int maxHealth);
 
     ~Enemy();
 
+    Enemy& operator=(Enemy&& other) noexcept;
     Enemy& operator=(const Enemy& other);
 
-    bool setName(const char* name);
+    // Getters
     const char* getName() const { return name; }
-
-    bool setAttackPower(int attackPower);
     int getAttackPower() const { return attackPower; }
-
-    bool setCurrentHealth(int currentHealth);
     int getCurrentHealth() const { return currentHealth; }
-
-    bool setMaxHealth(int maxHealth);
     int getMaxHealth() const { return maxHealth; }
 
+    // Setters
+    bool setAttackPower(int attackPower);
+    bool setCurrentHealth(int currentHealth);
+    bool setMaxHealth(int maxHealth);
+    bool setName(const char* name);
+
+    // Misc.
     bool attack(Player& player) const;
     bool receiveDamage(int damage);
     void showStats() const;

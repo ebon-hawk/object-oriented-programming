@@ -6,13 +6,26 @@
 
 #include "enemy.hpp"
 
+Enemy& Enemy::operator=(Enemy&& other) noexcept {
+    if (&other == this) return *this;
+
+    delete[] name;
+    name = other.name;
+    other.name = nullptr;
+
+    attackPower = other.attackPower;
+    currentHealth = other.currentHealth;
+    maxHealth = other.maxHealth;
+    return *this;
+}
+
 Enemy& Enemy::operator=(const Enemy& other) {
     if (&other == this) return *this;
 
     Enemy enemy(other);
     delete[] name;
     name = nullptr;
-    std::swap(name, enemy.name);
+    std::swap(enemy.name, name);
 
     attackPower = enemy.attackPower;
     currentHealth = enemy.currentHealth;
@@ -20,9 +33,12 @@ Enemy& Enemy::operator=(const Enemy& other) {
     return *this;
 }
 
-Enemy::Enemy()
-    : name(new char[1]), attackPower(0), currentHealth(0), maxHealth(0) {
-    name[0] = '\0';
+Enemy::Enemy(Enemy&& other) noexcept
+    : name(other.name),
+    attackPower(other.attackPower),
+    currentHealth(other.currentHealth),
+    maxHealth(other.maxHealth) {
+    other.name = nullptr;
 }
 
 Enemy::Enemy(const Enemy& other)
@@ -31,7 +47,7 @@ Enemy::Enemy(const Enemy& other)
     currentHealth(other.currentHealth),
     maxHealth(other.maxHealth) {
     if (!setName(other.name)) {
-        throw std::bad_alloc();
+        throw std::runtime_error("Failed to set name from copied object.");
     }
 }
 
@@ -86,7 +102,7 @@ bool Enemy::setName(const char* name) {
     return true;
 }
 
-// Other methods
+// Misc.
 bool Enemy::attack(Player& player) const {
     return player.receiveDamage(attackPower);
 }
