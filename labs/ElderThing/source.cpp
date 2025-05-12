@@ -8,25 +8,11 @@
 int main() {
     try {
         Enemy enemy("Murloc", 15, 75);
-        enemy.showStats();
+        std::cout << enemy;
 
         Player player(10, 12, 8, 15, 10);
-
-        if (enemy.attack(player)) {
-            std::cout << "Enemy successfully attacked the player.\n";
-        }
-        else {
-            std::cout << "Attack failed.\n";
-        }
-
-        if (enemy.receiveDamage(30)) {
-            std::cout << "Enemy received damage.\n";
-
-            enemy.showStats();
-        }
-        else {
-            std::cout << "Damage could not be applied.\n";
-        }
+        enemy.attack(player);
+        std::cout << player;
 
         std::cout << "Learning spells...\n";
 

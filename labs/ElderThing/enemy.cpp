@@ -5,33 +5,7 @@
 #include <stdexcept>
 
 #include "enemy.hpp"
-
-Enemy& Enemy::operator=(Enemy&& other) noexcept {
-    if (&other == this) return *this;
-
-    delete[] name;
-    name = other.name;
-    other.name = nullptr;
-
-    attackPower = other.attackPower;
-    currentHealth = other.currentHealth;
-    maxHealth = other.maxHealth;
-    return *this;
-}
-
-Enemy& Enemy::operator=(const Enemy& other) {
-    if (&other == this) return *this;
-
-    Enemy enemy(other);
-    delete[] name;
-    name = nullptr;
-    std::swap(enemy.name, name);
-
-    attackPower = enemy.attackPower;
-    currentHealth = enemy.currentHealth;
-    maxHealth = enemy.maxHealth;
-    return *this;
-}
+#include "player.hpp"
 
 Enemy::Enemy(Enemy&& other) noexcept
     : name(other.name),
@@ -64,6 +38,78 @@ Enemy::~Enemy() {
     delete[] name;
 }
 
+// Operators
+Enemy& Enemy::operator=(Enemy&& other) noexcept {
+    if (&other == this) return *this;
+
+    delete[] name;
+    name = other.name;
+    other.name = nullptr;
+
+    attackPower = other.attackPower;
+    currentHealth = other.currentHealth;
+    maxHealth = other.maxHealth;
+    return *this;
+}
+
+Enemy& Enemy::operator=(const Enemy& other) {
+    if (&other == this) return *this;
+
+    Enemy enemy(other);
+    delete[] name;
+    name = nullptr;
+    std::swap(enemy.name, name);
+
+    attackPower = enemy.attackPower;
+    currentHealth = enemy.currentHealth;
+    maxHealth = enemy.maxHealth;
+    return *this;
+}
+
+bool Enemy::operator!() const {
+    return currentHealth <= 0;
+}
+
+std::istream& operator>>(std::istream& in, Enemy& enemy) {
+    size_t len;
+
+    in >> len;
+
+    if (!in.good()) throw std::runtime_error("Invalid file format.");
+
+    char* name = new char[len];
+    name[len - 1] = '\0';
+
+    int attackPower, currentHealth, maxHealth;
+
+    in >> attackPower >> currentHealth >> maxHealth;
+
+    if (!in.good()) {
+        delete[] name;
+        throw std::runtime_error("Invalid file format.");
+    }
+
+    delete[] enemy.name;
+    enemy.name = name;
+
+    enemy.attackPower = attackPower;
+    enemy.currentHealth = currentHealth;
+    enemy.maxHealth = maxHealth;
+    return in;
+}
+
+std::ostream& operator<<(std::ostream& out, const Enemy& enemy) {
+    size_t len = strlen(enemy.name) + 1;
+
+    out << len << " " << enemy.name << " "
+        << enemy.attackPower << " "
+        << enemy.currentHealth << " "
+        << enemy.maxHealth << std::endl;
+
+    return out;
+}
+
+// Setters
 bool Enemy::setAttackPower(int attackPower) {
     if (attackPower < 0) return false;
 
@@ -103,16 +149,16 @@ bool Enemy::setName(const char* name) {
 }
 
 // Misc.
-bool Enemy::attack(Player& player) const {
-    return player.receiveDamage(attackPower);
-}
-
 bool Enemy::receiveDamage(int damage) {
     if (damage < 0) return false;
 
     int modifiedHealth = currentHealth - damage;
     modifiedHealth = (modifiedHealth < 0) ? 0 : modifiedHealth;
     return setCurrentHealth(modifiedHealth);
+}
+
+void Enemy::attack(Player& player) const {
+    player -= *this;
 }
 
 void Enemy::showStats() const {

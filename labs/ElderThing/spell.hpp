@@ -9,8 +9,11 @@ public:
 
     ~Spell();
 
+    // Operators
     Spell& operator=(Spell&& other) noexcept;
     Spell& operator=(const Spell& other);
+
+    friend std::ostream& operator<<(std::ostream& out, const Spell& spell);
 
     // Getters
     const char* getName() const { return name; }
@@ -39,3 +42,10 @@ private:
 
     const unsigned int requiredFaith, requiredIntelligence;
 };
+
+bool operator!=(const Spell& lhs, const Spell& rhs);
+bool operator<(const Spell& lhs, const Spell& rhs);
+bool operator<=(const Spell& lhs, const Spell& rhs);
+bool operator==(const Spell& lhs, const Spell& rhs);
+bool operator>(const Spell& lhs, const Spell& rhs);
+bool operator>=(const Spell& lhs, const Spell& rhs);

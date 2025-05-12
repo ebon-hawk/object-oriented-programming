@@ -1,5 +1,8 @@
 #pragma once
 
+#include <iostream>
+
+#include "enemy.hpp"
 #include "spell.hpp"
 #include "weapon.hpp"
 
@@ -23,7 +26,6 @@ public:
     static const unsigned int DEFAULT_MANA_FLASK_CHARGES = 5;
     static const unsigned int DEFAULT_PLAYER_LEVEL = 1;
     static const unsigned int DEFAULT_PLAYER_RUNES = 0;
-    static const unsigned int LEVEL_INCREMENT = 1;
 
     Player(Player&& other) noexcept;
     Player(const Player& other);
@@ -31,8 +33,20 @@ public:
 
     ~Player();
 
+    // Operators
+    Player operator+(const Weapon& weapon) const;
+    Player& operator+=(const Weapon& weapon);
+
+    Player operator++(int) const;
+    Player& operator++();
+
+    Player operator-(const Enemy& enemy) const;
+    Player& operator-=(const Enemy& enemy);
+
     Player& operator=(Player&& other) noexcept;
     Player& operator=(const Player& other);
+
+    friend std::ostream& operator<<(std::ostream& out, const Player& player);
 
     // Getters
     const Spell* const* getSpells() const { return spells; }
@@ -80,7 +94,6 @@ public:
     void increaseEndurance();
     void increaseFaith();
     void increaseIntelligence();
-    void increaseLevel();
     void increaseStrength();
 
     // Resource management
@@ -99,9 +112,9 @@ public:
 
     // Weapon management
     bool addWeapon(Weapon&& weapon);
+    bool addWeapon(const Weapon& weapon);
 
     // Misc.
-    bool receiveDamage(int damage);
     void showStats() const;
 private:
     float carryingCapacity, encumbrance, strength;

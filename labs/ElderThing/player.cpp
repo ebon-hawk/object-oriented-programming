@@ -6,6 +6,118 @@
 const float Player::CARRYING_CAPACITY_PER_STRENGTH = 10.0f;
 const float Player::STRENGTH_INCREMENT = 1.0f;
 
+Player::Player(Player&& other) noexcept
+    : carryingCapacity(other.carryingCapacity), encumbrance(other.encumbrance), strength(other.strength),
+    currentHealth(other.currentHealth), maxHealth(other.maxHealth),
+    currentMana(other.currentMana), maxMana(other.maxMana),
+    currentStamina(other.currentStamina), maxStamina(other.maxStamina),
+    dexterity(other.dexterity), endurance(other.endurance), faith(other.faith), intelligence(other.intelligence),
+    healthFlaskCharges(other.healthFlaskCharges), manaFlaskCharges(other.manaFlaskCharges),
+    level(other.level), runes(other.runes),
+    spells(other.spells), currentSpellIndex(other.currentSpellIndex), spellCount(other.spellCount),
+    weapons(other.weapons), currentWeaponIndex(other.currentWeaponIndex), weaponCount(other.weaponCount) {
+    other.currentSpellIndex = SIZE_MAX;
+    other.spellCount = 0;
+    other.spells = nullptr;
+
+    other.currentWeaponIndex = SIZE_MAX;
+    other.weaponCount = 0;
+    other.weapons = nullptr;
+}
+
+Player::Player(const Player& other)
+    : carryingCapacity(other.carryingCapacity), encumbrance(other.encumbrance), strength(other.strength),
+    currentHealth(other.currentHealth), maxHealth(other.maxHealth),
+    currentMana(other.currentMana), maxMana(other.maxMana),
+    currentStamina(other.currentStamina), maxStamina(other.maxStamina),
+    dexterity(other.dexterity), endurance(other.endurance), faith(other.faith), intelligence(other.intelligence),
+    healthFlaskCharges(other.healthFlaskCharges), manaFlaskCharges(other.manaFlaskCharges),
+    level(other.level), runes(other.runes),
+    spells(nullptr), currentSpellIndex(other.currentSpellIndex), spellCount(other.spellCount),
+    weapons(nullptr), currentWeaponIndex(other.currentWeaponIndex), weaponCount(other.weaponCount) {
+    if (!copySpells(other.spells, other.spellCount)) {
+        throw std::runtime_error("Failed to copy spells.");
+    }
+
+    if (!copyWeapons(other.weapons, other.weaponCount)) {
+        clearSpells();
+        throw std::runtime_error("Failed to copy weapons.");
+    }
+}
+
+Player::Player(float strength, int dexterity, int endurance, int faith, int intelligence)
+    : strength(strength), dexterity(dexterity), endurance(endurance), faith(faith), intelligence(intelligence) {
+    if (this->dexterity < 0 || this->endurance < 0 ||
+        this->faith < 0 || this->intelligence < 0 || this->strength < 0) {
+        throw std::invalid_argument("Player constructor failed: one or more arguments are invalid.");
+    }
+
+    // Character stats
+    carryingCapacity = CARRYING_CAPACITY_PER_STRENGTH * strength;
+    encumbrance = 0;
+    level = DEFAULT_PLAYER_LEVEL;
+    maxHealth = BASE_HEALTH + HEALTH_PER_ENDURANCE * endurance;
+    maxMana = BASE_MANA + MANA_PER_INTELLIGENCE * intelligence;
+    maxStamina = BASE_STAMINA + STAMINA_PER_ENDURANCE * endurance;
+
+    currentHealth = maxHealth;
+    currentMana = maxMana;
+    currentStamina = maxStamina;
+
+    // Resources
+    healthFlaskCharges = DEFAULT_HEALTH_FLASK_CHARGES;
+    manaFlaskCharges = DEFAULT_MANA_FLASK_CHARGES;
+    runes = DEFAULT_PLAYER_RUNES;
+
+    initializeSpells(INITIAL_SPELL_CAPACITY);
+    initializeWeapons(INITIAL_WEAPON_CAPACITY);
+}
+
+Player::~Player() {
+    clearSpells();
+    clearWeapons();
+}
+
+// Operators
+Player Player::operator+(const Weapon& weapon) const {
+    Player player = *this;
+    player += weapon;
+    return player;
+}
+
+Player Player::operator++(int) const {
+    Player player = *this;
+
+    ++player;
+    return player;
+}
+
+Player Player::operator-(const Enemy& enemy) const {
+    Player player = *this;
+    player -= enemy;
+    return player;
+}
+
+Player& Player::operator++() {
+    ++level;
+    return *this;
+}
+
+Player& Player::operator+=(const Weapon& weapon) {
+    if (!addWeapon(weapon)) throw "Failed to add weapon: inventory full.";
+
+    return *this;
+}
+
+Player& Player::operator-=(const Enemy& enemy) {
+    int modifiedHealth = currentHealth - enemy.getAttackPower();
+    modifiedHealth = (modifiedHealth < 0) ? 0 : modifiedHealth;
+
+    if (!setCurrentHealth(modifiedHealth)) throw "Failed to update player health.";
+
+    return *this;
+}
+
 Player& Player::operator=(Player&& other) noexcept {
     if (&other == this) return *this;
 
@@ -84,76 +196,16 @@ Player& Player::operator=(const Player& other) {
     return *this;
 }
 
-Player::Player(Player&& other) noexcept
-    : carryingCapacity(other.carryingCapacity), encumbrance(other.encumbrance), strength(other.strength),
-    currentHealth(other.currentHealth), maxHealth(other.maxHealth),
-    currentMana(other.currentMana), maxMana(other.maxMana),
-    currentStamina(other.currentStamina), maxStamina(other.maxStamina),
-    dexterity(other.dexterity), endurance(other.endurance), faith(other.faith), intelligence(other.intelligence),
-    healthFlaskCharges(other.healthFlaskCharges), manaFlaskCharges(other.manaFlaskCharges),
-    level(other.level), runes(other.runes),
-    spells(other.spells), currentSpellIndex(other.currentSpellIndex), spellCount(other.spellCount),
-    weapons(other.weapons), currentWeaponIndex(other.currentWeaponIndex), weaponCount(other.weaponCount) {
-    other.currentSpellIndex = SIZE_MAX;
-    other.spellCount = 0;
-    other.spells = nullptr;
+std::ostream& operator<<(std::ostream& out, const Player& player) {
+    out << player.level << " " << player.currentHealth;
 
-    other.currentWeaponIndex = SIZE_MAX;
-    other.weaponCount = 0;
-    other.weapons = nullptr;
-}
-
-Player::Player(const Player& other)
-    : carryingCapacity(other.carryingCapacity), encumbrance(other.encumbrance), strength(other.strength),
-    currentHealth(other.currentHealth), maxHealth(other.maxHealth),
-    currentMana(other.currentMana), maxMana(other.maxMana),
-    currentStamina(other.currentStamina), maxStamina(other.maxStamina),
-    dexterity(other.dexterity), endurance(other.endurance), faith(other.faith), intelligence(other.intelligence),
-    healthFlaskCharges(other.healthFlaskCharges), manaFlaskCharges(other.manaFlaskCharges),
-    level(other.level), runes(other.runes),
-    spells(nullptr), currentSpellIndex(other.currentSpellIndex), spellCount(other.spellCount),
-    weapons(nullptr), currentWeaponIndex(other.currentWeaponIndex), weaponCount(other.weaponCount) {
-    if (!copySpells(other.spells, other.spellCount)) {
-        throw std::runtime_error("Failed to copy spells.");
+    if (player.weapons[player.currentWeaponIndex]) {
+        out << " ";
+        out << *player.weapons[player.currentWeaponIndex];
     }
 
-    if (!copyWeapons(other.weapons, other.weaponCount)) {
-        clearSpells();
-        throw std::runtime_error("Failed to copy weapons.");
-    }
-}
-
-Player::Player(float strength, int dexterity, int endurance, int faith, int intelligence)
-    : strength(strength), dexterity(dexterity), endurance(endurance), faith(faith), intelligence(intelligence) {
-    if (this->dexterity < 0 || this->endurance < 0 ||
-        this->faith < 0 || this->intelligence < 0 || this->strength < 0) {
-        throw std::invalid_argument("Player constructor failed: one or more arguments are invalid.");
-    }
-
-    // Character stats
-    carryingCapacity = CARRYING_CAPACITY_PER_STRENGTH * strength;
-    encumbrance = 0;
-    level = DEFAULT_PLAYER_LEVEL;
-    maxHealth = BASE_HEALTH + HEALTH_PER_ENDURANCE * endurance;
-    maxMana = BASE_MANA + MANA_PER_INTELLIGENCE * intelligence;
-    maxStamina = BASE_STAMINA + STAMINA_PER_ENDURANCE * endurance;
-
-    currentHealth = maxHealth;
-    currentMana = maxMana;
-    currentStamina = maxStamina;
-
-    // Resources
-    healthFlaskCharges = DEFAULT_HEALTH_FLASK_CHARGES;
-    manaFlaskCharges = DEFAULT_MANA_FLASK_CHARGES;
-    runes = DEFAULT_PLAYER_RUNES;
-
-    initializeSpells(INITIAL_SPELL_CAPACITY);
-    initializeWeapons(INITIAL_WEAPON_CAPACITY);
-}
-
-Player::~Player() {
-    clearSpells();
-    clearWeapons();
+    out << std::endl;
+    return out;
 }
 
 // Setters
@@ -255,10 +307,6 @@ void Player::increaseFaith() {
 void Player::increaseIntelligence() {
     intelligence += INTELLIGENCE_INCREMENT;
     maxMana = BASE_MANA + MANA_PER_INTELLIGENCE * intelligence;
-}
-
-void Player::increaseLevel() {
-    level += LEVEL_INCREMENT;
 }
 
 void Player::increaseStrength() {
@@ -451,7 +499,22 @@ bool Player::addWeapon(Weapon&& weapon) {
 
             weapons[idx] = allocated;
 
-            // ++weaponCount;
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool Player::addWeapon(const Weapon& weapon) {
+    for (size_t idx = 0; idx < weaponCount; ++idx) {
+        if (!weapons[idx]) {
+            Weapon* allocated = new(std::nothrow) Weapon(weapon);
+
+            if (!allocated) return false;
+
+            weapons[idx] = allocated;
+
             return true;
         }
     }
@@ -515,14 +578,6 @@ void Player::initializeWeapons(size_t capacity) {
 }
 
 // Misc.
-bool Player::receiveDamage(int damage) {
-    if (damage < 0) return false;
-
-    int modifiedHealth = currentHealth - damage;
-    modifiedHealth = (modifiedHealth < 0) ? 0 : modifiedHealth;
-    return setCurrentHealth(modifiedHealth);
-}
-
 void Player::showStats() const {
     std::cout
         << "--- PLAYER STATS ---"

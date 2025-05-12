@@ -1,10 +1,41 @@
 #define _CRT_SECURE_NO_WARNINGS
 
+#include <cstring>
 #include <iostream>
 #include <stdexcept>
 
 #include "weapon.hpp"
 
+Weapon::Weapon(Weapon&& other) noexcept
+    : name(other.name),
+    weight(other.weight),
+    damage(other.damage),
+    requiredStrength(other.requiredStrength) {
+    other.name = nullptr;
+}
+
+Weapon::Weapon(const Weapon& other)
+    : name(nullptr),
+    weight(other.weight),
+    damage(other.damage),
+    requiredStrength(other.requiredStrength) {
+    if (!setName(other.name)) {
+        throw std::runtime_error("Failed to set name from copied object.");
+    }
+}
+
+Weapon::Weapon(const char* name, float weight, int damage, unsigned int requiredStrength)
+    : name(nullptr), weight(0), damage(0), requiredStrength(requiredStrength) {
+    if (!setDamage(damage) || !setName(name) || !setWeight(weight)) {
+        throw std::invalid_argument("Weapon constructor failed: one or more arguments are invalid.");
+    }
+}
+
+Weapon::~Weapon() {
+    delete[] name;
+}
+
+// Operators
 Weapon& Weapon::operator=(Weapon&& other) noexcept {
     if (&other == this) return *this;
 
@@ -38,35 +69,73 @@ Weapon& Weapon::operator=(const Weapon& other) {
     return *this;
 }
 
-Weapon::Weapon(Weapon&& other) noexcept
-    : name(other.name),
-    weight(other.weight),
-    damage(other.damage),
-    requiredStrength(other.requiredStrength) {
-    other.name = nullptr;
+bool operator!=(const Weapon& lhs, const Weapon& rhs) {
+    return !(lhs == rhs);
 }
 
-Weapon::Weapon(const Weapon& other)
-    : name(nullptr),
-    weight(other.weight),
-    damage(other.damage),
-    requiredStrength(other.requiredStrength) {
-    if (!setName(other.name)) {
-        throw std::runtime_error("Failed to set name from copied object.");
+bool operator<(const Weapon& lhs, const Weapon& rhs) {
+    return lhs.getDamage() < rhs.getDamage();
+}
+
+bool operator<=(const Weapon& lhs, const Weapon& rhs) {
+    return !(rhs < lhs);
+}
+
+bool operator==(const Weapon& lhs, const Weapon& rhs) {
+    return (lhs.getDamage() == rhs.getDamage()) && (strcmp(lhs.getName(), rhs.getName()) == 0);
+}
+
+bool operator>(const Weapon& lhs, const Weapon& rhs) {
+    return rhs < lhs;
+}
+
+bool operator>=(const Weapon& lhs, const Weapon& rhs) {
+    return !(lhs < rhs);
+}
+
+std::istream& operator>>(std::istream& in, Weapon& weapon) {
+    size_t len;
+
+    in >> len;
+
+    if (!in.good()) throw std::runtime_error("Invalid file format.");
+
+    char* name = new char[len];
+    name[len - 1] = '\0';
+
+    float weight;
+    int damage;
+    unsigned int requiredStrength;
+
+    in >> weight >> damage >> requiredStrength;
+
+    if (!in.good()) {
+        delete[] name;
+        throw std::runtime_error("Invalid file format.");
     }
+
+    delete[] weapon.name;
+    weapon.name = name;
+
+    weapon.damage = damage;
+    weapon.requiredStrength = requiredStrength;
+    weapon.weight = weight;
+
+    return in;
 }
 
-Weapon::Weapon(const char* name, float weight, int damage, unsigned int requiredStrength)
-    : name(nullptr), weight(0), damage(0), requiredStrength(requiredStrength) {
-    if (!setDamage(damage) || !setName(name) || !setWeight(weight)) {
-        throw std::invalid_argument("Weapon constructor failed: one or more arguments are invalid.");
-    }
+std::ostream& operator<<(std::ostream& out, const Weapon& weapon) {
+    size_t len = strlen(weapon.name) + 1;
+
+    out << len << " " << weapon.name << " "
+        << weapon.weight << " "
+        << weapon.damage << " "
+        << weapon.requiredStrength << std::endl;
+
+    return out;
 }
 
-Weapon::~Weapon() {
-    delete[] name;
-}
-
+// Setters
 bool Weapon::setDamage(int damage) {
     if (damage < 0) return false;
 
@@ -97,6 +166,7 @@ bool Weapon::setWeight(float weight) {
     return true;
 }
 
+// Misc.
 void Weapon::showStats() const {
     std::cout
         << "--- WEAPON STATS ---"

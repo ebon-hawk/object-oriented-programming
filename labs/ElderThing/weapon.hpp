@@ -1,5 +1,7 @@
 #pragma once
 
+#include <iostream>
+
 class Weapon {
 public:
     Weapon(Weapon&& other) noexcept;
@@ -8,8 +10,12 @@ public:
 
     ~Weapon();
 
+    // Operators
     Weapon& operator=(Weapon&& other) noexcept;
     Weapon& operator=(const Weapon& other);
+
+    friend std::istream& operator>>(std::istream& in, Weapon& weapon);
+    friend std::ostream& operator<<(std::ostream& out, const Weapon& weapon);
 
     // Getters
     const char* getName() const { return name; }
@@ -30,3 +36,10 @@ private:
     int damage;
     unsigned int requiredStrength;
 };
+
+bool operator!=(const Weapon& lhs, const Weapon& rhs);
+bool operator<(const Weapon& lhs, const Weapon& rhs);
+bool operator<=(const Weapon& lhs, const Weapon& rhs);
+bool operator==(const Weapon& lhs, const Weapon& rhs);
+bool operator>(const Weapon& lhs, const Weapon& rhs);
+bool operator>=(const Weapon& lhs, const Weapon& rhs);

@@ -1,6 +1,8 @@
 #pragma once
 
-#include "player.hpp"
+#include <iostream>
+
+class Player;
 
 class Enemy {
 public:
@@ -10,8 +12,14 @@ public:
 
     ~Enemy();
 
+    // Operators
     Enemy& operator=(Enemy&& other) noexcept;
     Enemy& operator=(const Enemy& other);
+
+    bool operator!() const;
+
+    friend std::istream& operator>>(std::istream& in, Enemy& enemy);
+    friend std::ostream& operator<<(std::ostream& out, const Enemy& enemy);
 
     // Getters
     const char* getName() const { return name; }
@@ -26,8 +34,8 @@ public:
     bool setName(const char* name);
 
     // Misc.
-    bool attack(Player& player) const;
     bool receiveDamage(int damage);
+    void attack(Player& player) const;
     void showStats() const;
 private:
     char* name;

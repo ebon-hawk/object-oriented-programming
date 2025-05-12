@@ -1,46 +1,10 @@
 #define _CRT_SECURE_NO_WARNINGS
 
+#include <cstring>
 #include <iostream>
 #include <stdexcept>
 
 #include "spell.hpp"
-
-Spell& Spell::operator=(Spell&& other) noexcept {
-    if (&other == this) return *this;
-
-    if (other.requiredFaith == requiredFaith &&
-        other.requiredIntelligence == requiredIntelligence) {
-        delete[] name;
-        name = other.name;
-        other.name = nullptr;
-
-        cooldown = other.cooldown;
-        damage = other.damage;
-        manaCost = other.manaCost;
-        remainingCooldown = other.remainingCooldown;
-    }
-
-    return *this;
-}
-
-Spell& Spell::operator=(const Spell& other) {
-    if (&other == this) return *this;
-
-    if (other.requiredFaith == requiredFaith &&
-        other.requiredIntelligence == requiredIntelligence) {
-        Spell spell(other);
-        delete[] name;
-        name = nullptr;
-        std::swap(name, spell.name);
-
-        cooldown = spell.cooldown;
-        damage = spell.damage;
-        manaCost = spell.manaCost;
-        remainingCooldown = spell.remainingCooldown;
-    }
-
-    return *this;
-}
 
 Spell::Spell(Spell&& other) noexcept
     : name(other.name),
@@ -86,6 +50,83 @@ Spell::~Spell() {
     delete[] name;
 }
 
+// Operators
+Spell& Spell::operator=(Spell&& other) noexcept {
+    if (&other == this) return *this;
+
+    if (other.requiredFaith == requiredFaith &&
+        other.requiredIntelligence == requiredIntelligence) {
+        delete[] name;
+        name = other.name;
+        other.name = nullptr;
+
+        cooldown = other.cooldown;
+        damage = other.damage;
+        manaCost = other.manaCost;
+        remainingCooldown = other.remainingCooldown;
+    }
+
+    return *this;
+}
+
+Spell& Spell::operator=(const Spell& other) {
+    if (&other == this) return *this;
+
+    if (other.requiredFaith == requiredFaith &&
+        other.requiredIntelligence == requiredIntelligence) {
+        Spell spell(other);
+        delete[] name;
+        name = nullptr;
+        std::swap(name, spell.name);
+
+        cooldown = spell.cooldown;
+        damage = spell.damage;
+        manaCost = spell.manaCost;
+        remainingCooldown = spell.remainingCooldown;
+    }
+
+    return *this;
+}
+
+bool operator!=(const Spell& lhs, const Spell& rhs) {
+    return !(lhs == rhs);
+}
+
+bool operator<(const Spell& lhs, const Spell& rhs) {
+    return lhs.getDamage() < rhs.getDamage();
+}
+
+bool operator<=(const Spell& lhs, const Spell& rhs) {
+    return !(rhs < lhs);
+}
+
+bool operator==(const Spell& lhs, const Spell& rhs) {
+    return (lhs.getDamage() == rhs.getDamage()) && (strcmp(lhs.getName(), rhs.getName()) == 0);
+}
+
+bool operator>(const Spell& lhs, const Spell& rhs) {
+    return rhs < lhs;
+}
+
+bool operator>=(const Spell& lhs, const Spell& rhs) {
+    return !(lhs < rhs);
+}
+
+std::ostream& operator<<(std::ostream& out, const Spell& spell) {
+    size_t len = strlen(spell.name) + 1;
+
+    out << len << " " << spell.name << " "
+        << spell.damage << " "
+        << spell.manaCost << " "
+        << spell.cooldown << " "
+        << spell.remainingCooldown << " "
+        << spell.requiredFaith << " "
+        << spell.requiredIntelligence << std::endl;
+
+    return out;
+}
+
+// Setters
 bool Spell::setCooldown(unsigned int cooldown) {
     if (cooldown == 0) return false;
 
